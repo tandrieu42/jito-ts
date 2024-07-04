@@ -16,29 +16,29 @@ import {
   TransactionReturnData,
   VersionedTransaction,
 } from '@solana/web3.js';
-import {
-  type as pick,
-  number,
-  string,
-  array,
-  boolean,
-  literal,
-  union,
-  optional,
-  nullable,
-  coerce,
-  create,
-  tuple,
-  unknown,
-  any,
-  Struct,
-} from 'superstruct';
-import type {Agent as NodeHttpAgent} from 'http';
-import {Agent as NodeHttpsAgent} from 'https';
-import fetchImpl, {Response} from './fetch-impl';
 import HttpKeepAliveAgent, {
   HttpsAgent as HttpsKeepAliveAgent,
 } from 'agentkeepalive';
+import type {Agent as NodeHttpAgent} from 'http';
+import {Agent as NodeHttpsAgent} from 'https';
+import {
+  Struct,
+  any,
+  array,
+  boolean,
+  coerce,
+  create,
+  literal,
+  nullable,
+  number,
+  optional,
+  type as pick,
+  string,
+  tuple,
+  union,
+  unknown,
+} from 'superstruct';
+import fetchImpl, {Response} from './fetch-impl';
 
 import RpcClient from 'jayson/lib/client/browser';
 import {sleep} from './utils';
@@ -261,6 +261,7 @@ function createRpcClient(
   let fetchWithMiddleware: FetchFn | undefined;
 
   if (fetchMiddleware) {
+    //@ts-ignore
     fetchWithMiddleware = async (info, init) => {
       const modifiedFetchArgs = await new Promise<Parameters<FetchFn>>(
         (resolve, reject) => {
@@ -273,6 +274,7 @@ function createRpcClient(
           }
         }
       );
+      //@ts-ignore
       return await fetch(...modifiedFetchArgs);
     };
   }
@@ -296,8 +298,10 @@ function createRpcClient(
       let waitTime = 500;
       for (;;) {
         if (fetchWithMiddleware) {
+          // @ts-ignore
           res = await fetchWithMiddleware(url, options);
         } else {
+          // @ts-ignore
           res = await fetch(url, options);
         }
 
@@ -440,10 +444,12 @@ export class JitoRpcConnection extends Connection {
           console.error(res.error.message, logTrace);
         }
       }
-      throw new SendTransactionError(
-        'failed to simulate bundle: ' + res.error.message,
-        logs
-      );
+      throw new SendTransactionError({
+        action: 'simulate',
+        signature: 'signature',
+        transactionMessage: 'failed to simulate bundle: ' + res.error.message,
+        logs,
+      });
     }
     return res.result;
   }
